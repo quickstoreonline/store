@@ -34,6 +34,8 @@
             font-size: 24px;
             letter-spacing: 1px;
             font-weight: 600;
+            cursor: default; /* സാധാരണ ടെക്സ്റ്റ് പോലെ തോന്നിപ്പിക്കാൻ */
+            user-select: none; /* സെലക്ട് ആകുന്നത് തടയാൻ */
         }
 
         .logo-highlight {
@@ -109,13 +111,13 @@
             border: 1px solid #0559c9;
         }
 
-        /* Out of Stock Button Style */
+        /* Out of Stock Style */
         .out-btn {
             background: #ccc !important;
             color: #666 !important;
             border: 1px solid #999 !important;
             cursor: not-allowed;
-            pointer-events: none; /* ക്ലിക്ക് ചെയ്യാൻ പറ്റില്ല */
+            pointer-events: none;
         }
 
         .card-out {
@@ -131,7 +133,7 @@
 </head>
 <body>
 
-    <header>
+    <header id="mainHeader">
         <h1>Quick<span class="logo-highlight">Store</span></h1>
         <p>Best Deals Delivered To You</p>
     </header>
@@ -149,13 +151,12 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // പ്രോഡക്റ്റുകൾ ലോഡ് ചെയ്യുന്നു
         database.ref('products').on('value', (snapshot) => {
             const container = document.getElementById('product-list');
             container.innerHTML = '';
             snapshot.forEach((childSnapshot) => {
                 const item = childSnapshot.val();
-                
-                // Out of Stock ആണോ എന്ന് ചെക്ക് ചെയ്യുന്നു
                 const isOut = item.status === "out";
                 const btnText = isOut ? "Out of Stock" : "Buy Now";
                 const btnClass = isOut ? "btn out-btn" : "btn";
@@ -175,6 +176,27 @@
                 `;
             });
         });
+
+        // --- SECRET ADMIN ACCESS ---
+        let adminClicks = 0;
+        let clickTimer;
+        const logo = document.querySelector('header h1');
+
+        logo.onclick = function() {
+            adminClicks++;
+            clearTimeout(clickTimer);
+            
+            // 5 തവണ ക്ലിക്ക് ചെയ്താൽ അഡ്മിൻ പേജിലേക്ക് പോകും
+            if (adminClicks === 5) {
+                window.location.href = "admin.html";
+                adminClicks = 0;
+            }
+
+            // 3 സെക്കൻഡിനുള്ളിൽ 5 ക്ലിക്ക് നടന്നില്ലെങ്കിൽ കൗണ്ട് റീസെറ്റ് ആകും
+            clickTimer = setTimeout(() => {
+                adminClicks = 0;
+            }, 3000);
+        };
     </script>
 </body>
 </html>
