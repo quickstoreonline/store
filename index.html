@@ -34,8 +34,8 @@
             font-size: 24px;
             letter-spacing: 1px;
             font-weight: 600;
-            cursor: default; /* സാധാരണ ടെക്സ്റ്റ് പോലെ തോന്നിപ്പിക്കാൻ */
-            user-select: none; /* സെലക്ട് ആകുന്നത് തടയാൻ */
+            cursor: default;
+            user-select: none;
         }
 
         .logo-highlight {
@@ -151,17 +151,24 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-       
-    database.ref('visits').transaction((currentValue) => {
-    return (currentValue || 0) + 1;
-     });
+        // വെബ്സൈറ്റ് വിസിറ്റ് കൗണ്ട് കൂട്ടുന്നു
+        database.ref('visits').transaction((currentValue) => {
+            return (currentValue || 0) + 1;
+        });
 
+        // ഓരോ പ്രോഡക്റ്റിലെയും ക്ലിക്ക് കൂട്ടുന്നു
+        function incrementClick(key) {
+            database.ref('products/' + key + '/clicks').transaction((currentClicks) => {
+                return (currentClicks || 0) + 1;
+            });
+        }
 
         // പ്രോഡക്റ്റുകൾ ലോഡ് ചെയ്യുന്നു
         database.ref('products').on('value', (snapshot) => {
             const container = document.getElementById('product-list');
             container.innerHTML = '';
             snapshot.forEach((childSnapshot) => {
+                const key = childSnapshot.key;
                 const item = childSnapshot.val();
                 const isOut = item.status === "out";
                 const btnText = isOut ? "Out of Stock" : "Buy Now";
@@ -175,8 +182,11 @@
                             <h3>${item.title}</h3>
                             <p class="price">₹${item.price}</p>
                         </div>
-                        <a href="${isOut ? '#' : item.link}" target="${isOut ? '' : '_blank'}" class="${btnClass}">
-                            ${btnText}
+                        <a href="${isOut ? '#' : item.link}" 
+                           target="${isOut ? '' : '_blank'}" 
+                           class="${btnClass}" 
+                           onclick="incrementClick('${key}')">
+                           ${btnText}
                         </a>
                     </div>
                 `;
@@ -191,19 +201,14 @@
         logo.onclick = function() {
             adminClicks++;
             clearTimeout(clickTimer);
-            
-            // 5 തവണ ക്ലിക്ക് ചെയ്താൽ അഡ്മിൻ പേജിലേക്ക് പോകും
             if (adminClicks === 5) {
                 window.location.href = "admin.html";
                 adminClicks = 0;
             }
-
-            // 3 സെക്കൻഡിനുള്ളിൽ 5 ക്ലിക്ക് നടന്നില്ലെങ്കിൽ കൗണ്ട് റീസെറ്റ് ആകും
             clickTimer = setTimeout(() => {
                 adminClicks = 0;
             }, 3000);
         };
-  
     </script>
 </body>
 </html>
