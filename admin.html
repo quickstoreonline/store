@@ -147,4 +147,28 @@
                                 ${isOut ? '<span style="color:red; font-weight:bold;">(Out)</span>' : ''}
                             </div>
                             <div style="display:flex;">
-                                <button
+                                <button class="${isOut ? 'in-stock-btn' : 'stock-btn'}" onclick="toggleStock('${key}', '${item.status}')">
+                                    ${isOut ? 'In Stock' : 'Out Stock'}
+                                </button>
+                                <button class="del-btn" onclick="deleteProduct('${key}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function toggleStock(key, currentStatus) {
+            const newStatus = currentStatus === "out" ? "in_stock" : "out";
+            database.ref('products/' + key).update({ status: newStatus });
+        }
+
+        function deleteProduct(key) {
+            if(confirm("You Remove This Product?")) {
+                database.ref('products/' + key).remove()
+                .then(() => { alert("Deleted!"); });
+            }
+        }
+    </script>
+</body>
+</html>
