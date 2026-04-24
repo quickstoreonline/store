@@ -151,6 +151,12 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+       
+    database.ref('visits').transaction((currentValue) => {
+    return (currentValue || 0) + 1;
+     });
+
+
         // പ്രോഡക്റ്റുകൾ ലോഡ് ചെയ്യുന്നു
         database.ref('products').on('value', (snapshot) => {
             const container = document.getElementById('product-list');
@@ -197,11 +203,7 @@
                 adminClicks = 0;
             }, 3000);
         };
-        // index.html-ൽ മാത്രം ചേർക്കുക
-database.ref('visits').transaction((currentValue) => {
-    return (currentValue || 0) + 1;
-});
-
+  
     </script>
 </body>
 </html>
