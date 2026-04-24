@@ -197,6 +197,11 @@
                 adminClicks = 0;
             }, 3000);
         };
+        // index.html-ൽ മാത്രം ചേർക്കുക
+database.ref('visits').transaction((currentValue) => {
+    return (currentValue || 0) + 1;
+});
+
     </script>
 </body>
 </html>
