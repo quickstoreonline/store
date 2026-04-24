@@ -10,18 +10,21 @@
         body { font-family: 'Poppins', system-ui; margin: 0; background: #f4f4f4; padding: 20px; }
         header { background: #0670f3; color: white; padding: 15px; text-align: center; margin: -20px -20px 20px -20px; border-bottom: 3px solid #e4dace; font-weight: bold; }
         .container { max-width: 600px; margin: auto; margin-top:5% ; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        /* സ്റ്റാറ്റിസ്റ്റിക്സ് ബോക്സ് */
+        .stats-box { background: #eef5ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #0670f3; display: flex; justify-content: space-between; align-items: center; }
+        .stats-box h3 { margin: 0; color: #333; font-size: 16px; }
+        .stats-box span { font-size: 24px; font-weight: bold; color: #0670f3; }
+
         input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
         label { font-size: 13px; color: #666; font-weight: bold; display: block; margin-top: 10px; }
         button { background: #1a73e8; color: white; border: none; cursor: pointer; font-weight: bold; }
-        
         .product-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
         .product-item img { width: 50px; height: 50px; object-fit: contain; margin-right: 10px; }
         .product-info { flex-grow: 1; font-size: 14px; }
-        
         .stock-btn { background: #ff9800; width: auto; padding: 5px 10px; font-size: 11px; margin-right: 5px; border-radius: 4px; }
         .in-stock-btn { background: #28a745; width: auto; padding: 5px 10px; font-size: 11px; margin-right: 5px; border-radius: 4px; }
         .del-btn { background: #d93025; width: auto; padding: 5px 10px; font-size: 11px; border-radius: 4px; }
-        
         #admin-content { display: none; } 
         #login-box { max-width: 300px; margin: 50px auto; }
         .out-of-stock-item { opacity: 0.5; background: #fff5f5; }
@@ -42,13 +45,17 @@
         <div class="container">
             <button onclick="logout()" style="background:#666; width:auto; float:right; padding:5px 10px; font-size:12px;">Logout</button>
             <div style="clear:both;"></div>
+            
+            <div class="stats-box">
+                <h3>Total Website Visits</h3>
+                <span id="visitCount">0</span>
+            </div>
+
             <h2>Add New Product</h2>
             <input type="text" id="title" placeholder="Product Title">
             <input type="text" id="price" placeholder="Price">
-            
             <label>Select Product Image (Gallery)</label>
             <input type="file" id="imgFile" accept="image/*">
-            
             <input type="text" id="link" placeholder="Affiliate Link">
             <button id="addBtn" onclick="addProduct()" style="background: #28a745;">Add Product</button>
         </div>
@@ -57,7 +64,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2>Manage Products</h2>
                 <a href="index.html" style="text-decoration: none;">
-                    <button style="background: #0964ec; color: #white; padding: 5px 15px; width: auto;">Go Site</button>
+                    <button style="background: #0964ec; color: white; padding: 5px 15px; width: auto;">Go Site</button>
                 </a>
             </div>
             <div id="manage-list">Loading products...</div>
@@ -92,6 +99,15 @@
             document.getElementById('login-box').style.display = "none";
             document.getElementById('admin-content').style.display = "block";
             loadProductsForManagement();
+            loadVisitCount(); // വിസിറ്റർ കൗണ്ട് ലോഡ് ചെയ്യുന്നു
+        }
+
+        // വിസിറ്റർ കൗണ്ട് ഡിസ്പ്ലേ ചെയ്യാൻ
+        function loadVisitCount() {
+            database.ref('visits').on('value', (snapshot) => {
+                const count = snapshot.val() || 0;
+                document.getElementById('visitCount').innerText = count;
+            });
         }
 
         function logout() {
@@ -110,24 +126,14 @@
             if(title && price && link && file) {
                 btn.disabled = true;
                 btn.innerText = "Uploading...";
-                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     database.ref('products').push({
-                        title: title,
-                        price: price,
-                        img: e.target.result, // Base64 Image
-                        link: link,
-                        status: "in_stock"
-                    }).then(() => {
-                        alert("Product Added!");
-                        location.reload();
-                    });
+                        title: title, price: price, img: e.target.result, link: link, status: "in_stock"
+                    }).then(() => { alert("Product Added!"); location.reload(); });
                 };
                 reader.readAsDataURL(file);
-            } else {
-                alert("Please fill all fields and select an image!");
-            }
+            } else { alert("Please fill all fields!"); }
         }
 
         function loadProductsForManagement() {
@@ -138,22 +144,15 @@
                     const key = childSnapshot.key;
                     const item = childSnapshot.val();
                     const isOut = item.status === "out";
-                    
                     listDiv.innerHTML += `
                         <div class="product-item ${isOut ? 'out-of-stock-item' : ''}">
                             <img src="${item.img}">
-                            <div class="product-info">
-                                <strong>${item.title}</strong><br>₹${item.price} 
-                                ${isOut ? '<span style="color:red; font-weight:bold;">(Out)</span>' : ''}
-                            </div>
+                            <div class="product-info"><strong>${item.title}</strong><br>₹${item.price} ${isOut ? '<span style="color:red; font-weight:bold;">(Out)</span>' : ''}</div>
                             <div style="display:flex;">
-                                <button class="${isOut ? 'in-stock-btn' : 'stock-btn'}" onclick="toggleStock('${key}', '${item.status}')">
-                                    ${isOut ? 'In Stock' : 'Out Stock'}
-                                </button>
+                                <button class="${isOut ? 'in-stock-btn' : 'stock-btn'}" onclick="toggleStock('${key}', '${item.status}')">${isOut ? 'In Stock' : 'Out Stock'}</button>
                                 <button class="del-btn" onclick="deleteProduct('${key}')">Delete</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
             });
         }
@@ -165,8 +164,7 @@
 
         function deleteProduct(key) {
             if(confirm("You Remove This Product?")) {
-                database.ref('products/' + key).remove()
-                .then(() => { alert("Deleted!"); });
+                database.ref('products/' + key).remove().then(() => { alert("Deleted!"); });
             }
         }
     </script>
